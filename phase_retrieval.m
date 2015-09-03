@@ -2,17 +2,20 @@ function phase_retrieval
 
 close all;
 
+rng(3);
+
 N=400; %This is the total size (including outside the FOV)
 noise_level=0.01; %Too afraid to add more noise at this time
 num_it=400; %Number of iterations at each resolution
 
 %First we only do one recon at full resolution
-N0s=[400];
-do_phase_retrieval(N,noise_level,N0s,num_it);
-title('Without recursive linearization');
+%N0s=[400];
+%do_phase_retrieval(N,noise_level,N0s,num_it);
+%title('Without recursive linearization');
 
 %Second we step up from low-res to high-res
-N0s=[50,100,200,400];
+%N0s=[50,90,130,170,210,250,290,330,370,400];
+N0s=[30,100,200,300,400];
 do_phase_retrieval(N,noise_level,N0s,num_it);
 title('With recursive linearization');
 
@@ -32,10 +35,13 @@ for aa=1:4
     u_true = u_true - (GR<=0.1)*1;
 end;
 u_true = u_true + (abs(GX - 0.5)<0.1).*(abs(GY - 0.4)<0.2);
+u_true(200,230)=3;
+u_true(200,240)=3;
+u_true(270,240)=3;
 
 % add some noise and plot
 u_true=u_true+randn(size(u_true))*noise_level;
-%u_true=u_true.*inside_box;
+u_true=u_true.*inside_box;
 figure; imagesc(u_true); colormap('gray'); set(gcf,'position',[0,0,600,600]);
 
 % Let's get the magnitude k-space data
@@ -48,13 +54,12 @@ results={};
 for iN0=1:length(N0s) % Step through the resolutions
     N0=N0s(iN0);
     d0=crop(d,N0); % Crop the k-space data to achieve lower resolution
-    [GX0,GY0]=ndgrid(linspace(-2,2,N0),linspace(-2,2,N0));111
+    [GX0,GY0]=ndgrid(linspace(-2,2,N0),linspace(-2,2,N0));
 
     % The number of retries depends on resolution
     % We want to repeat many times at low resolution, and take the best
     num_retries=1;
-    if (N0<=100) num_retries=10; end;
-    if (N0<=50) num_retries=50; end;
+    if (iN0==1) num_retries=50; end;
     tries={};
     try_end_resids=zeros(1,num_retries); %Keep track of the end resids in order to pick the best
     for rr=1:num_retries
@@ -109,6 +114,8 @@ for j=1:num_it
     % discussed... I like this one better -- but need to experiment with
     % coeffs, etc.
     u=u.*inside_box.*positive*1 + u.*inside_box.*negative*0.1 + u.*outside_box.*positive*0.5 + u.*outside_box.*negative*0.1;
+    %u=u.*inside_box.*positive*1 + u.*inside_box.*negative*1 + u.*outside_box.*positive*0.2 + u.*outside_box.*negative*0.2;
+    %u=u.*inside_box.*positive*1 + u.*inside_box.*negative*0.1 + u.*outside_box.*positive*1 + u.*outside_box.*negative*0.1;
     
     uhat=fft2b(u);
     resid(j)=sqrt(sum((abs(uhat(:))-d(:)).^2)/length(d(:)));
