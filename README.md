@@ -1,6 +1,6 @@
 # phase_retrieval
 
-## Nothing to see here...
+## Preliminary tests on the phase retrieval problem
 
 From MATLAB
 
