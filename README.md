@@ -1,10 +1,10 @@
 # phase_retrieval
 
-## Description
+## Pay no heed. Just something we're working on. 
 
-This program demonstrates something about something. And eventually this something will be used for something else.
+From MATLAB
 
-```c++
-for (int i=0; i<10; i++) printf("%d\n",i);
+```matlab
+> phase_retrieval_test
 ```
 
