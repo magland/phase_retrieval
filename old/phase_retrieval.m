@@ -17,7 +17,7 @@ num_it=400; %Number of iterations at each resolution
 %N0s=[50,90,130,170,210,250,290,330,370,400];
 N0s=[30,100,200,300,400];
 do_phase_retrieval(N,noise_level,N0s,num_it);
-title('With recursive linearization');
+title('With recursive linearization');;;
 
 end
 
