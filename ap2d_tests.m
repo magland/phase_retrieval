@@ -1,37 +1,33 @@
-function ap1d_tests
+function ap2d_tests
 
 close all;
 
-example=2;
+% Select example=1 or example=2
+example=1;
 
 if example==1
     N=300;
     [xx,yy]=ndgrid(linspace(-2,2,N),linspace(-2,2,N));
     F=create_gaussian(xx,yy,0.2);
-    F=F+create_gaussian(xx-0.5,yy+0.2,0.2)*0.3.*((xx-0.5).^2+(yy+0.2).^2<=0.2^2);
-    noise_factor=0.01;
+    noise_factor=0.01; %How far away from the true solution we start -- set to 1 to randomize completely
 elseif example==2
     N=300;
     [xx,yy]=ndgrid(linspace(-2,2,N),linspace(-2,2,N));
     F=create_gaussian(xx,yy,0.2);
     F=F+create_gaussian(xx-0.5,yy+0.2,0.2)*0.3.*((xx-0.5).^2+(yy+0.2).^2<=0.2^2);
     %F=F.*(yy<0.25);
-    noise_factor=0.01;
+    noise_factor=0.01; %How far away from the true solution we start -- set to 1 to randomize completely
 end;
 
 u=abs(fftb(F));
-Fph=angle(fftb(F));
-Fph=normalize_phase(Fph);
-F=real(ifftb(u.*exp(i*Fph)));
-
 figure; imagesc(F); colormap('gray');
-
 ph=angle(fftb(F));
 
 apfig=figure; plot(1:10); set(apfig,'position',[100,100,1500,400]);
-
 numit=100;
 ph0=ph + (rand(size(u))*2-1)*pi*noise_factor;
+
+%Here's the actual algorithm!
 [f,err]=ap2d(xx,yy,u,ph0,numit,F,apfig);
 
 
@@ -40,8 +36,6 @@ end
 function [f,positivity_deviation]=ap2d(xx,yy,u,ph,numit,ref,apfig)
 
 ph0_ref=angle(fftb(ref));
-ph0_ref=normalize_phase(ph0_ref);
-ref=real(ifftb(u.*exp(i*ph0_ref)));
 
 ph0=ph;
 positivity_deviations=ones(1,numit)*inf;
@@ -56,7 +50,7 @@ for it=1:numit
     fproj=f.*(f>=0).*(abs(xx)<1).*(abs(yy)<1);
     new_fhat=fftb(fproj);
     ph0=angle(new_fhat);
-    ph0=normalize_phase(ph0);
+    ph0=normalize_phase(ph0,ph0_ref);
     err_fhat_mag(it)=max(abs(abs(new_fhat(:))-u(:)));
     if nargin>=4
         figure(apfig);
@@ -78,15 +72,16 @@ end;
 
 end
 
-function ph2=normalize_phase(ph)
+function ph2=normalize_phase(ph,ph_ref)
 
+ph_diff=ph-ph_ref;
 [N1,N2]=size(ph);
 M1=ceil((N1+1)/2);
 M2=ceil((N2+1)/2);
-slope1=(ph(M1+1,M2)-ph(M1-1,M2))/2;
-slope2=(ph(M1,M2+1)-ph(M1,M2-1))/2;
+slope1=(ph_diff(M1+1,M2)-ph_diff(M1-1,M2))/2;
+slope2=(ph_diff(M1,M2+1)-ph_diff(M1,M2-1))/2;
 [GX,GY]=ndgrid(((0:N1-1)-M1),((0:N2-1)-M2));
-ph2=ph-GX*slope1+-GY*slope2;
+ph2=ph-GX*slope1-GY*slope2;
 
 end
 
