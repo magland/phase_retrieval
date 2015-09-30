@@ -2,29 +2,33 @@ function ap2d_tests
 
 close all;
 
+rng(2);
+
 % Select example=1 or example=2
-example=1;
+example=2;
 
 if example==1
-    N=300;
-    [xx,yy]=ndgrid(linspace(-2,2,N),linspace(-2,2,N));
+    N=200;
+    [xx,yy]=ndgrid(linspace(-3,3,N),linspace(-3,3,N));
     F=create_gaussian(xx,yy,0.2);
     noise_factor=0.01; %How far away from the true solution we start -- set to 1 to randomize completely
 elseif example==2
-    N=300;
+    N=200;
     [xx,yy]=ndgrid(linspace(-2,2,N),linspace(-2,2,N));
-    F=create_gaussian(xx,yy,0.2);
-    F=F+create_gaussian(xx-0.5,yy+0.2,0.2)*0.3.*((xx-0.5).^2+(yy+0.2).^2<=0.2^2);
+    %F=create_gaussian(xx,yy,0.2);
+    F=create_gaussian(xx-0.5,yy+0.2,0.2)*0.3.*((xx-0.5).^2+(yy+0.2).^2<=0.2^2);
     %F=F.*(yy<0.25);
-    noise_factor=0.01; %How far away from the true solution we start -- set to 1 to randomize completely
+    noise_factor=1e-7; %How far away from the true solution we start -- set to 1 to randomize completely
 end;
 
 u=abs(fftb(F));
 figure; imagesc(F); colormap('gray');
 ph=angle(fftb(F));
 
+figure; imagesc(log10(u)); colormap('gray');
+
 apfig=figure; plot(1:10); set(apfig,'position',[100,100,1500,400]);
-numit=100;
+numit=300;
 ph0=ph + (rand(size(u))*2-1)*pi*noise_factor;
 
 %Here's the actual algorithm!
@@ -37,17 +41,30 @@ function [f,positivity_deviation]=ap2d(xx,yy,u,ph,numit,ref,apfig)
 
 ph0_ref=angle(fftb(ref));
 
+alpha=0.3;
+beta=0.8;
+
 ph0=ph;
 positivity_deviations=ones(1,numit)*inf;
 err_image=ones(1,numit)*inf;
+err_image2=ones(1,numit)*inf;
 err_fhat_mag=ones(1,numit)*inf;
+fprev=zeros(size(u));
 for it=1:numit
     fhat=u.*exp(i*ph0);
     f=real(ifftb(fhat));
     positivity_deviation=max(0,-min(f(:)));
     positivity_deviations(it)=positivity_deviation;
     err_image(it)=max(abs(f(:)-ref(:)));
-    fproj=f.*(f>=0).*(abs(xx)<1).*(abs(yy)<1);
+    err_image2(it)=max(abs(f(:)-fprev(:)));
+    fproj=(1-alpha)*fprev+alpha*f.*(f>=0);
+    fproj=fproj.*(abs(xx)<1).*(abs(yy)<1);
+    %fproj=f;
+    %fproj=f.*(f>=0).*(abs(xx)<1).*(abs(yy)<1) +(fprev-beta*fprev).*((f<0)|(abs(xx)>=1)|(abs(yy)>=1));
+    %fproj=f.*(f>=0);
+    %fproj=f.*(abs(xx)<1).*(abs(yy)<1) + (fprev-f).*((abs(xx)>=1)|(abs(yy)>=1));
+    fprev=fproj;
+    
     new_fhat=fftb(fproj);
     ph0=angle(new_fhat);
     ph0=normalize_phase(ph0,ph0_ref);
@@ -61,14 +78,21 @@ for it=1:numit
         subplot(1,3,2);
         semilogy(1:numit,positivity_deviations,'b'); hold on;
         semilogy(1:numit,err_fhat_mag,'g'); hold on;
-        semilogy(1:numit,err_image,'r'); hold off;
+        semilogy(1:numit,err_image,'r'); hold on;
+        semilogy(2:numit,err_image2(2:end),'m'); hold on;
+        semilogy(2:numit,abs(diff(positivity_deviations)),'k'); hold off;
         title('Error');
         legend('Max dev. from positivity','Max err abs(fhat)','Max err image');
         subplot(1,3,3);
-        imagesc(ph0-ph0_ref); title('phase error');
+        phase_error=angle(exp(i*(ph0-ph0_ref)));
+        imagesc(phase_error); title('phase error');
         pause(0.0001); drawnow;
     end;
 end;
+
+figure; plot(log10(u(:)),phase_error(:),'.');
+xlabel('Log10 of magnitude'); ylabel('Phase error');
+title('Pixel-wise phase error as a function of Fourier magnitude');
 
 end
 
@@ -92,9 +116,9 @@ Y=exp(-(xx/sigma).^2).*exp(-(yy/sigma).^2);
 end
 
 function Y=fftb(X)
-Y=fftshift(fft2(fftshift(X)));
+Y=fftshift(fft2(ifftshift(X)));
 end
 
 function Y=ifftb(X)
-Y=fftshift(ifft2(fftshift(X)));
+Y=fftshift(ifft2(ifftshift(X)));
 end
