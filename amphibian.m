@@ -3,7 +3,7 @@ function f=amphibian(xx,yy,u,opts)
 if (nargin==0) amphibian_test; return; end;
 
 num_solutions=30;
-num_threads=6;
+num_threads=4;
 total_num_solutions=num_solutions*num_threads;
 tolerance=1e-8;
 max_iterations=50000;
@@ -30,21 +30,8 @@ epsilons=zeros(1,total_num_solutions);
 for j=1:total_num_solutions
     epsilons(j)=solutions{j}.closeness;
 end;
-epsilons_at_10=zeros(1,total_num_solutions);
-epsilons_at_30=zeros(1,total_num_solutions);
-epsilons_at_50=zeros(1,total_num_solutions);
-epsilons_at_70=zeros(1,total_num_solutions);
-for j=1:total_num_solutions
-    epsilons_at_10(j)=solutions{j}.closeness_at(1);
-    epsilons_at_30(j)=solutions{j}.closeness_at(2);
-    epsilons_at_50(j)=solutions{j}.closeness_at(3);
-    epsilons_at_70(j)=solutions{j}.closeness_at(4);
-end;
+
 [epsilons,sort_inds]=sort(epsilons);
-epsilons_at_10=epsilons_at_10(sort_inds);
-epsilons_at_30=epsilons_at_30(sort_inds);
-epsilons_at_50=epsilons_at_50(sort_inds);
-epsilons_at_70=epsilons_at_70(sort_inds);
 sorted_solutions={};
 for j=1:total_num_solutions
     sorted_solutions{j}=solutions{sort_inds(j)};
@@ -70,22 +57,6 @@ end;
 
 figure; plot(1:total_num_solutions,epsilons,'b.');
 title('Closeness');
-
-figure; plot(epsilons_at_10,epsilons_at_30,'b.');
-xlabel('Closeness at a=10');
-ylabel('Closeness at a=30');
-
-figure; plot(epsilons_at_30,epsilons_at_50,'b.');
-xlabel('Closeness at a=30');
-ylabel('Closeness at a=50');
-
-figure; plot(epsilons_at_50,epsilons_at_70,'b.');
-xlabel('Closeness at a=50');
-ylabel('Closeness at a=70');
-
-figure; plot(epsilons_at_70,epsilons,'b.');
-xlabel('Closeness at a=70');
-ylabel('Closeness at full');
 
 figure; plot(5:length(est_epsilons),est_epsilons(5:end),'k.');
 title('Est epsilons');
@@ -120,15 +91,6 @@ for ii=1:num_solutions
     end;
     
     opts0=opts;
-    list=[20,40,60,80];
-    for jj=1:length(list)
-        f=generate_random_solution(xx,yy,apodize(u,list(jj)),tolerance,max_iterations,opts0);
-        f=register_to_reference(f,opts.f_exact);
-        f2=real(ifftb(pi_2(fftb(f),u,1)));
-        f2_proj=pi_1(f2,xx,yy,1);
-        XX.closeness_at(jj)=sqrt(sum((f2(:)-f2_proj(:)).^2))/u_norm;
-        opts0.f_init=f;
-    end;
         
     f=generate_random_solution(xx,yy,u,tolerance,max_iterations,opts0);
     f=register_to_reference(f,opts.f_exact);
