@@ -1,0 +1,144 @@
+\documentclass[10pt]{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{psfrag,epsf}
+\usepackage{enumerate}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage{amsfonts}
+\usepackage{mathrsfs}
+
+
+% DON'T change margins - should be 1 inch all around.
+\addtolength{\oddsidemargin}{-.5in}%
+\addtolength{\evensidemargin}{-.5in}%
+\addtolength{\textwidth}{1in}%
+\addtolength{\textheight}{1.3in}%
+\addtolength{\topmargin}{-.8in}%
+
+\begin{document}
+
+%\bibliographystyle{natbib}
+
+\def\spacingset#1{\renewcommand{\baselinestretch}%
+{#1}\small\normalsize} \spacingset{1}
+
+\newcommand\norm[1]{\left\lVert#1\right\rVert}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  \bigskip
+  \bigskip
+  \bigskip
+  \begin{center}
+    {\LARGE\bf An approach to the phase retrieval problem}
+  \end{center}
+  \medskip
+
+
+\bigskip
+\begin{abstract}
+
+\end{abstract}
+
+\section {Derivation of the (damped) alternating projection algorithm}
+
+Let $f$ be the image and let $u=|\hat{f}|$ be the measured data. The two constraints we want to satisfy are
+$$f=\pi_1(f)$$
+$$\hat{f}=\pi_2(\hat{f}),$$
+where $\pi_1$ and $\pi_2$ are the non-linear projection operators defined by
+$$
+(\pi_1 f)(x)=\begin{cases}
+f(x) & \text{if }f(x)\geq 0 \text{ and } x\in S \\
+0 & \text{otherwise}
+\end{cases}
+$$
+$$
+\pi_2\hat{f}=\frac{\hat{f}}{|\hat{f}|}u.
+$$
+Putting these two constraints together, we would like to minimize an objective function of the form
+$$
+E(f)=\mu_1\norm{f-\pi_1 f}_2^2 + \mu_2\norm{f-\mathscr{F}^{-1}\pi_2\mathscr{F} f}_2^2.
+$$
+Certainly if $E(f)=0$ then $f$ satisfies the desired constraints (in the $L_2$ sense).
+
+We introduce an additional function $g$ and instead minimize
+$$
+\tilde{E}(f)=
+\lambda_1\norm{f-\pi_1 f}_2^2 + \lambda_2\norm{g-\mathscr{F}^{-1}\pi_2\mathscr{F} g}_2^2 + \beta\norm{f-g}_2^2.
+$$
+Certainly if $\tilde{E}(f,g)=0$ then $f=g$ (in $L_2$ sense) and $E(f)=0$.
+
+Let $g_n$ be the approximation for $g$ at the $n^{\text{th}}$ iteration. Then treating $g$ as fixed we can minimize $\tilde{E}$ pointwise for $f$ in the image domain. One can show that the optimal choice (which necessarily decreases the residual) is 
+$$f_n = \pi_{1,\alpha_1}g_n=\alpha_1\pi_1 g_n + (1-\alpha_1)g_n$$
+for $\alpha_1=\frac{\lambda_1}{\lambda_1+\beta}$.
+
+Next we consider $f_n$ as a constant and we want to minimize $\tilde{E}$ with respect to $g$, again with a guarantee that the residual will not increase. This may be done pointwise in the Fourier domain. The optimal choice is
+$$
+\hat{g}_{n+1}=\pi_{2,\alpha_2}=\alpha_2\pi_2\hat{f}_n + (1-\alpha_2)\hat{f}_n.$$
+Our iteration is therefore given by
+$$
+g_{n+1}=\mathscr{F}^{-1}\pi_{2,\alpha_2}\mathscr{F}\pi_{1,\alpha_1}g_n.
+$$
+
+In order to relate $\lambda_1$ and $\lambda_2$ to our desired $\mu_1$ and $\mu_2$, we now express $\tilde{E}$ solely as a function of $g_n$:
+\begin{equation}
+\begin{split}
+\tilde{\tilde{E}}(g_n) & =\tilde{E}(\pi_{1,\alpha_1}g_n,g_n) \\ 
+& =
+\lambda_1\norm{\pi_{1,\alpha_1}g_n-\pi_1 \pi_{1,\alpha_1}g_n}_2^2 + \lambda_2\norm{g_n-\mathscr{F}^{-1}\pi_2\mathscr{F} g_n}_2^2 + \beta\norm{\pi_{1,\alpha_1}g_n-g_n}_2^2 \\
+& = \lambda_1(1-\alpha_1)^2\norm{g_n-\pi_1 g_n}_2^2 + \lambda_2 \norm{g_n - \mathscr{F}^{-1}\pi_2 \mathscr{F}g_n}_2^2 + \beta\alpha_1^2\norm{\pi_1 g_n - g_n}_2^2 \\
+& = \lambda_1(1-\alpha_1)\norm{g_n-\pi_1 g_n}_2^2 + \lambda_2 \norm{g_n - \mathscr{F}^{-1}\pi_2 \mathscr{F}g_n}_2^2
+\end{split}
+\end{equation}
+
+
+Solving for 
+The original tuning parameters are therefore
+\begin{equation}
+\begin{split}
+\mu_1=\lambda_1(1-\alpha_1)=\beta \alpha_1 \\
+\mu_1=\lambda_2=\beta \frac{\alpha_2}{1-\alpha_2}.
+\end{split}
+\end{equation}
+So we sould use the following damping parameters:
+\begin{equation}
+\begin{split}
+\alpha_1=\mu_1/\beta \\
+\alpha_2=\frac{\mu_2\alpha_1}{\mu_1+\mu_2\alpha_1}.
+\end{split}
+\end{equation}
+
+Thus we see that it is not wise to use $\alpha_2=1$ as in the standard alternating projection algorithm. Note that $\beta_1$ should be greater than $\mu_1$ to keep $\alpha_1<1$. I recommend using $\mu_1=\mu_2=1$ and $\beta=1.5$, which corresponds to $\alpha_1=\frac{2}{3}$ and $\alpha_2=\frac{2}{5}$. 
+
+\section {$\varepsilon$-uniqueness}
+
+A function $f$ is called an $\varepsilon$-close solution to the above problem if 
+\begin{equation}
+f=\mathscr{F}^{-1}\pi_2\mathscr{F} f
+\label{eq:matches_u}
+\end{equation}
+and 
+$$
+\norm{f-\pi_1 f}_2\leq \varepsilon \norm{\mathscr{F}^{-1}u}_2.
+$$
+If for all pairs $f_1,f_2$ of $\varepsilon$-close solutions, 
+$$\norm{f_1 - f_2}_2\leq \varepsilon\norm{\mathscr{F}^{-1}u}_2,$$ then we say that these solutions are $\varepsilon$-unique. The above problem is $\varepsilon$-solvable if there exists an $\varepsilon$-unique solution.
+
+Given $f$, an $\varepsilon$-close solution, we can test empirically whether $f$ is likely to be can be $\varepsilon$-unique by generating random $\varepsilon$-close solutions using different initializations in the iteration above and comparing them with $f$.
+
+For example, for the below figure we generated 6000 images using the above iteration scheme and using a different random initialization for each reconstruction. The "closeness" is computed as
+$$\text{closeness}=\frac{\norm{f-\pi_1 f}_2}{\norm{\mathscr{F}^{-1}u}_2}.$$
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=\textwidth]{screenshot1.png}
+\end{center}
+\caption{Reconstruction of a 50x50 image using 6000 restarts. The upper-left histogram shows the distribution of the "closenesses"
+where $f$ satisfies Equation~\eqref{eq:matches_u}. 
+A comparison of the top two elongated figures shows that the estimated error matches very well with the actual error (around 0.2).
+The bottom right figure shows the relationship between closeness and actual error.
+}
+\end{figure}
+
+\end{document}
