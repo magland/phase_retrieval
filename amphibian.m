@@ -2,8 +2,8 @@ function f=amphibian(xx,yy,u,opts)
 
 if (nargin==0) amphibian_test; return; end;
 
-num_solutions=30;
-num_threads=4;
+num_solutions=10;
+num_threads=24;
 total_num_solutions=num_solutions*num_threads;
 tolerance=1e-8;
 max_iterations=50000;
@@ -42,24 +42,25 @@ errors=zeros(1,total_num_solutions);
 for j=1:total_num_solutions
     errors(j)=solutions{j}.error;
 end;
-est_epsilons=zeros(1,40);
-est_epsilons(1)=epsilons(1);
-for j=2:length(est_epsilons)
-    f1=solutions{j}.f;
-    val=0;
-    for k=1:j-1
-        f2=solutions{k}.f;
-        dist=sqrt(sum((f1(:)-f2(:)).^2))/u_norm;
-        val=max(dist,val);
-    end;
-    est_epsilons(j)=max(est_epsilons(j-1),val);
-end;
+% est_epsilons=zeros(1,40);
+% est_epsilons(1)=epsilons(1);
+% for j=2:length(est_epsilons)
+%     f1=solutions{j}.f;
+%     val=0;
+%     for k=1:j-1
+%         f2=solutions{k}.f;
+%         dist=sqrt(sum((f1(:)-f2(:)).^2))/u_norm;
+%         val=max(dist,val);
+%     end;
+%     est_epsilons(j)=max(est_epsilons(j-1),val);
+% end;
+%figure; plot(5:length(est_epsilons),est_epsilons(5:end),'k.');
+%title('Est epsilons');
 
 figure; plot(1:total_num_solutions,epsilons,'b.');
 title('Closeness');
 
-figure; plot(5:length(est_epsilons),est_epsilons(5:end),'k.');
-title('Est epsilons');
+
 
 figure; plot(1:total_num_solutions,errors,'r.');
 title('Error');
@@ -69,6 +70,17 @@ figure; plot(epsilons,errors,'k.'); xlabel('closeness'); ylabel('error');
 figure; hist(epsilons,200);
 
 f=solutions{1}.f;
+
+
+V=zeros(size(f));
+for j=1:length(solutions)
+    if (solutions{j}.closeness<0.02)
+        V(:,:,j)=solutions{j}.f;
+    end;
+end;
+stdev0=sqrt(var(V,[],3));
+err0=min(1,stdev0./u);
+figure; imagesc(err0);
 
 save test.mat
 

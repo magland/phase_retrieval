@@ -1,12 +1,10 @@
-function amphibian_test
+function test_reptile
 
-close all;
+%close all;
 
 rng(1);
 
 [xx,yy,f_exact]=create_example(4);
-f_exact=real(ifftb(apodize(fftb(f_exact),40,80)));
-[xx,yy]=ndgrid(linspace(-1,1,size(f_exact,1)),linspace(-1,1,size(f_exact,2)));
 u=abs(fftb(f_exact));
 
 figure; imagesc(f_exact); colormap('gray'); set(gcf,'position',[100,100,500,400]);
@@ -15,7 +13,7 @@ drawnow;
 title(sprintf('min = %g\n',min(f_exact(:))));
 
 opts.f_exact=f_exact;
-f=amphibian(xx,yy,u,opts);
+f=reptile(xx,yy,u,opts);
 
 figure; imagesc(f); colormap('gray'); set(gcf,'position',[700,100,500,400]);
 
@@ -23,8 +21,18 @@ end
 
 function [xx,yy,f_exact]=create_example(num)
 
-oversamp=1;
-N=500;
+if (num==-1)
+    oversamp=1;
+    N=2;
+    [xx,yy]=ndgrid(linspace(-oversamp,oversamp,N),linspace(-oversamp,oversamp,N));
+    f_exact=rand(N,N);
+    %f_exact=[0,0;1,0];
+    %f_exact=[0.5,0.0001;0.7,0.3];
+    return;
+end;
+
+oversamp=1.25;
+N=64*1.25;
 [xx,yy]=ndgrid(linspace(-oversamp,oversamp,N),linspace(-oversamp,oversamp,N));
 
 if num==0
@@ -50,18 +58,41 @@ elseif num==4
         rr=(rand*2-1)*0.2;
         f_exact=f_exact+create_gaussian(xx-cc(1),yy-cc(2),rr/2).*((xx-cc(1)).^2+(yy-cc(2)).^2<=rr^2);
     end;
+    for kk=1:5
+        cc=(rand(2,1)*2-1)*0.7;
+        rr=(rand*2-1)*0.2;
+        f_exact=f_exact+(abs(xx-cc(1))<=rr).*(abs(yy-cc(2))<=rr);
+    end;
     %f_exact=f_exact+create_gaussian(xx,yy,0.5)*0.2;
     %f_exact=f_exact+randn(size(xx))*0.02;
-elseif num==4.1
+elseif num==4.01
     f_exact=zeros(size(xx));
-    for kk=1:10
+    for kk=1:5
         cc=(rand(2,1)*2-1)*0.7;
-        rr=(rand*2-1)*0.25;
+        rr=(rand*2-1)*0.2;
         f_exact=f_exact+create_gaussian(xx-cc(1),yy-cc(2),rr/2).*((xx-cc(1)).^2+(yy-cc(2)).^2<=rr^2);
     end;
-    f_exact=f_exact+create_gaussian(xx,yy,0.2)*0.2;
-    f_exact=f_exact+rand(size(xx))*0.02;
+    
+elseif num==4.1
+    f_exact=zeros(size(xx));
+    for kk=1:20
+        cc=(rand(2,1)*2-1)*0.7;
+        rr=(rand*2-1)*0.2;
+        f_exact=f_exact+create_gaussian(xx-cc(1),yy-cc(2),rr/2).*((xx-cc(1)).^2+(yy-cc(2)).^2<=rr^2);
+    end;
+    for kk=1:5
+        cc=(rand(2,1)*2-1)*0.7;
+        rr=(rand*2-1)*0.2;
+        f_exact=f_exact+(abs(xx-cc(1))<=rr).*(abs(yy-cc(2))<=rr);
+    end;
+    f_exact=f_exact+create_gaussian(xx,yy,0.3)*1;
+    %f_exact=f_exact+rand(size(xx))*0.02;
 end;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% REMEMBER TO REMOVE THIS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%xx=xx/2;
+%yy=yy/2;
 
 end
 
@@ -76,40 +107,6 @@ end
 function Y=ifftb(X)
 Y=fftshift(ifft2(ifftshift(X)));
 end
-
-function d0=apodize_kb(d,dx)
-
-[N1,N2]=size(d);
-M1=ceil((N1+1)/2);
-M2=ceil((N2+1)/2);
-
-ff=2;
-
-d0=d(M1-dx:M1+dx-1,M2-dx:M2+dx-1);
-N1b=dx*2;
-N2b=dx*2;
-for k=1:N2b
-    for j=1:N1b
-        opts.fac1=1; opts.fac2=1;
-        d0(j,k)=d0(j,k)*kb_kernel(j-dx-1,dx*2*ff,opts)*kb_kernel(k-dx-1,dx*2*ff,opts);
-    end;
-end;
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Here is the Kaisser-Bessel kernel
-function [val,nspread]=kb_kernel(x,nspread,opts)
-
-W=nspread*opts.fac1;
-beta=pi*sqrt(W*W/4-0.8)*opts.fac2;
-
-y=beta*sqrt(1-(2*x/W).^2);
-val=besseli(0,y);
-val=val/besseli(0,beta);
-
-end
-
 
 function d0=apodize(d,sigma,N2)
 
