@@ -1,6 +1,6 @@
 function test_reptile
 
-%close all;
+close all;
 
 rng(1);
 
@@ -32,7 +32,7 @@ if (num==-1)
 end;
 
 oversamp=1.25;
-N=64*1.25;
+N=64*oversamp;
 [xx,yy]=ndgrid(linspace(-oversamp,oversamp,N),linspace(-oversamp,oversamp,N));
 
 if num==0

@@ -4,11 +4,12 @@ if (nargin==0) test_reptile; return; end;
 
 addpath /home/magland/dev/mdaio
 
-sigmas=[inf];
-N2s=[64*1.25];
-solution_counts=[40000];
-%sigmas=[inf];
-%N2s=[2];
+%sigmas=[8,16,24,32,inf];
+%N2s=[8,16,24,32,64*1.25];
+%solution_counts=[200,100,50,20,20];
+sigmas=[8];
+N2s=[16];
+solution_counts=[2000];
 
 %solution_counts=[300,50,50,50,50,50];
 %sigmas=[inf];
@@ -34,13 +35,13 @@ for iii=1:length(sigmas)
 
     %Find a bunch of solutions
     num_solutions=solution_counts(iii);
-    num_threads=12;
+    num_threads=4;
     tolerance=1e-10;
     max_iterations=50000;
     opts0.num_jobs=20;
     opts0.oversamp=max(xx(:)); % a hack
-    %[solutions,resids_img,errors]=generate_random_solutions(xx0,yy0,u0,num_solutions,num_threads,tolerance,max_iterations,opts0);
-    [solutions,resids_img,errors]=generate_random_solutions_cl(xx0,yy0,u0,num_solutions,num_threads,tolerance,max_iterations,opts0);
+    [solutions,resids_img,errors]=generate_random_solutions(xx0,yy0,u0,num_solutions,num_threads,tolerance,max_iterations,opts0);
+    %[solutions,resids_img,errors]=generate_random_solutions_cl(xx0,yy0,u0,num_solutions,num_threads,tolerance,max_iterations,opts0);
     
     f=solutions{1}.f;
     figure; imagesc(f); colormap('gray');
@@ -51,7 +52,7 @@ for iii=1:length(sigmas)
     ylabel('Error');
     title('Error vs. residual'); drawnow;
 
-    [means,stdevs]=compute_solution_variations(solutions(1:50),u0);
+    [means,stdevs]=compute_solution_variations(solutions(1:10),u0);
     stdevs=min(1,stdevs);
     figure; imagesc(stdevs); colorbar;
     title('Variation in Fourier data'); drawnow;
